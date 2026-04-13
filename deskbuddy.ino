@@ -1,19 +1,19 @@
 /*
  * DeskBuddy Complete - Face + Weather + Clock
  * 
- * 모드:
- * - 모드 0: 살아있는 눈동자 얼굴
- * - 모드 1: 날씨 애니메이션 창문
- * - 모드 2: 시계 + 날짜
+ * mode:
+ * - mode 0: face with living eyes
+ * - mode 1: weather animation window
+ * - mode 2: clock + date
  * 
- * 버튼 S1 (P0.11)로 모드 전환
+ * button S1 (P0.11) for mode switching
  */
 
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
-// 커스텀 I2C (P0.07, P0.08)
+// custom I2C (P0.07, P0.08)
 TwoWire myWire(NRF_TWIM1, NRF_TWIS1, SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1_IRQn, 7, 8);
 
 #define SCREEN_WIDTH 128
@@ -27,21 +27,21 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &myWire, OLED_RESET);
 #define LED_PIN 13
 
 // ==================================================
-// 모드 관리
+// mode management
 // ==================================================
 int currentMode = 0;
-const int MAX_MODES = 3;  // 3개 모드!
+const int MAX_MODES = 3;  // 3 modes!
 bool lastButtonState = HIGH;
 
 // ==================================================
-// 날씨 데이터
+// weather data
 // ==================================================
 float temperature = 23.5;
 int humidity = 65;
 String weatherCondition = "Clear";
 
 // ==================================================
-// 시간 데이터
+// time data
 // ==================================================
 int hours = 12;
 int minutes = 0;
@@ -49,12 +49,12 @@ int seconds = 0;
 String dateStr = "Mon, Apr 14";
 unsigned long lastSecondUpdate = 0;
 
-// 날씨 애니메이션 프레임
+// weather animation frame
 int animFrame = 0;
 unsigned long lastAnimUpdate = 0;
 const int ANIM_SPEED = 100;
 
-// 파티클
+// particles
 struct Particle {
   float x, y, speed;
   bool active;
@@ -65,7 +65,7 @@ Particle particles[MAX_PARTICLES];
 float cloudX = 0;
 
 // ==================================================
-// 감정 상태 (얼굴 모드용)
+// emotion state (for face mode)
 // ==================================================
 #define MOOD_NORMAL 0
 #define MOOD_HAPPY 1
@@ -78,7 +78,7 @@ unsigned long lastMoodChange = 0;
 const unsigned long MOOD_CHANGE_INTERVAL = 15000;
 
 // ==================================================
-// 눈 물리 엔진
+// eye physics engine
 // ==================================================
 struct Eye {
   float x, y, w, h;
@@ -125,14 +125,14 @@ unsigned long lastSaccade = 0;
 unsigned long saccadeInterval = 3000;
 
 // ==================================================
-// Serial 데이터 파싱
+// Serial data parsing
 // ==================================================
 void parseSerialData(String data) {
-  // 형식: "W,15.3,65,Clear" 또는 "T,14:30:25,Mon Apr 14"
+  // format: "W,15.3,65,Clear" or "T,14:30:25,Mon Apr 14"
   
   if (data.startsWith("W,")) {
-    // 날씨 데이터
-    data = data.substring(2); // "W," 제거
+    // weather data
+    data = data.substring(2); // "W," elimination
     int firstComma = data.indexOf(',');
     int secondComma = data.indexOf(',', firstComma + 1);
     
@@ -144,15 +144,15 @@ void parseSerialData(String data) {
     }
   } 
   else if (data.startsWith("T,")) {
-    // 시간 데이터
-    data = data.substring(2); // "T," 제거
+    // time data
+    data = data.substring(2); // "T," elimination
     int comma = data.indexOf(',');
     
     if (comma > 0) {
       String timeStr = data.substring(0, comma);
       dateStr = data.substring(comma + 1);
       
-      // 시간 파싱 "14:30:25"
+      // time parsing "14:30:25"
       int colon1 = timeStr.indexOf(':');
       int colon2 = timeStr.indexOf(':', colon1 + 1);
       
@@ -167,12 +167,12 @@ void parseSerialData(String data) {
 }
 
 // ==================================================
-// 시간 업데이트 (자체 카운트)
+// time update (self-counting)
 // ==================================================
 void updateClock() {
   unsigned long now = millis();
   
-  // 1초마다 초 증가
+  // increasing seconds every 1 second
   if (now - lastSecondUpdate >= 1000) {
     seconds++;
     if (seconds >= 60) {
@@ -191,7 +191,7 @@ void updateClock() {
 }
 
 // ==================================================
-// 날씨 애니메이션 (이전과 동일)
+// weather animation (same as before)
 // ==================================================
 void initWeatherAnimation() {
   for (int i = 0; i < MAX_PARTICLES; i++) {
@@ -318,10 +318,10 @@ void drawTempHumidity() {
 }
 
 // ==================================================
-// 시계 화면 그리기
+// drawing clock screen
 // ==================================================
 void drawClockMode() {
-  // 날짜
+  // date
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(10, 5);
@@ -329,38 +329,38 @@ void drawClockMode() {
   
   display.drawLine(0, 15, 128, 15, SSD1306_WHITE);
   
-  // 시간 (큰 글씨)
+  // time (large font)
   display.setTextSize(3);
   
-  // 시
+  // hour
   char timeStr[3];
   sprintf(timeStr, "%02d", hours);
   display.setCursor(15, 25);
   display.print(timeStr);
   
-  // 콜론 (깜빡임)
+  // colon (blinking)
   if (seconds % 2 == 0) {
     display.setCursor(50, 25);
     display.print(":");
   }
   
-  // 분
+  // minutes
   sprintf(timeStr, "%02d", minutes);
   display.setCursor(65, 25);
   display.print(timeStr);
   
-  // 초 (작은 글씨)
+  // seconds (small font)
   display.setTextSize(1);
   display.setCursor(110, 35);
   sprintf(timeStr, "%02d", seconds);
   display.print(timeStr);
   
-  // 아날로그 시계 스타일 장식
+  // analog clock style decoration
   display.drawCircle(64, 25, 2, SSD1306_WHITE);
 }
 
 // ==================================================
-// 얼굴 모드 함수들
+// face mode functions
 // ==================================================
 void randomSaccade() {
   float dx = random(-8, 9);
@@ -509,7 +509,7 @@ void setup() {
 void loop() {
   unsigned long now = millis();
   
-  // 버튼 입력
+  // button input
   bool buttonState = digitalRead(BUTTON_PIN);
   if (buttonState == LOW && lastButtonState == HIGH) {
     delay(50);
@@ -520,19 +520,19 @@ void loop() {
   }
   lastButtonState = buttonState;
   
-  // Serial 데이터 수신
+  // Serial data reception
   if (Serial.available() > 0) {
     String data = Serial.readStringUntil('\n');
     data.trim();
     parseSerialData(data);
   }
   
-  // 시계 업데이트 (모드 2일 때)
+  // time update (mode 2)
   if (currentMode == 2) {
     updateClock();
   }
   
-  // 얼굴 모드 업데이트
+  // face mode update
   if (currentMode == 0) {
     if (now - lastSaccade > saccadeInterval) {
       randomSaccade();
@@ -548,13 +548,13 @@ void loop() {
     rightEye.update();
   }
   
-  // 날씨 애니메이션 업데이트
+  // weather animation update
   if (currentMode == 1 && now - lastAnimUpdate > ANIM_SPEED) {
     updateWeatherAnimation();
     lastAnimUpdate = now;
   }
   
-  // 화면 그리기
+  // drawing screen
   display.clearDisplay();
   
   switch(currentMode) {
