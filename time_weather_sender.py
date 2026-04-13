@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 Weather + Time to NU40-DK via USB Serial
+Improved weather condition detection
 """
 
 import serial
@@ -10,11 +11,11 @@ import sys
 from datetime import datetime
 
 # settings
-SERIAL_PORT = '/dev/cu.usbmodem1101'  # fix as needed (macOS: /dev/cu.usbmodem*, Linux: /dev/ttyACM*, Windows: COMx)
+SERIAL_PORT = '/dev/cu.usbmodem1101'  # fix as needed (e.g. /dev/ttyACM0 on Linux, COM3 on Windows, /dev/cu.usbmodem* on macOS)
 BAUD_RATE = 115200
 UPDATE_INTERVAL = 60
 
-CITY = 'Seoul'  # city name for wttr.in (e.g. 'Seoul', 'New York', 'London')
+CITY = 'Seoul'
 
 def get_weather():
     """weather information from wttr.in"""
@@ -28,43 +29,51 @@ def get_weather():
         current = data['current_condition'][0]
         temp = float(current['temp_C'])
         humidity = int(current['humidity'])
-        condition = current['weatherDesc'][0]['value']
+        condition = current['weatherDesc'][0]['value'].lower()
         
-        if 'rain' in condition.lower():
+        print(f"original weather: {condition}")  # for debugging
+        
+        # 더 정확한 날씨 분류
+        if 'rain' in condition or 'drizzle' in condition or 'shower' in condition:
             condition = 'Rain'
-        elif 'cloud' in condition.lower():
-            condition = 'Clouds'
-        elif 'clear' in condition.lower() or 'sunny' in condition.lower():
-            condition = 'Clear'
-        elif 'snow' in condition.lower():
+        elif 'snow' in condition or 'sleet' in condition:
             condition = 'Snow'
+        elif 'cloud' in condition or 'overcast' in condition:
+            condition = 'Clouds'
+        elif 'clear' in condition or 'sunny' in condition or 'fair' in condition:
+            condition = 'Clear'
+        elif 'mist' in condition or 'fog' in condition or 'haze' in condition:
+            condition = 'Clouds'  # show clouds for mist, fog, and haze
+        elif 'thunder' in condition or 'storm' in condition:
+            condition = 'Rain'  # show rain for thunder and storm
         else:
-            condition = 'Other'
+            # set clear as default if no match found
+            condition = 'Clear'
         
         return temp, humidity, condition
     
     except Exception as e:
-        print(f"failed to get weather: {e}")
+        print(f"Failed to get weather information: {e}")
         return None, None, None
 
 def get_time():
-    """get current time and date"""
+    """Get current time and date"""
     now = datetime.now()
     time_str = now.strftime("%H:%M:%S")
     date_str = now.strftime("%a, %b %d")  # Mon, Apr 14
     return time_str, date_str
 
 def send_weather(ser, temp, humidity, condition):
-    """send weather data (W,temperature,humidity,condition)"""
+    """Send weather data (W,temperature,humidity,condition)"""
     message = f"W,{temp:.1f},{humidity},{condition}\n"
     ser.write(message.encode('utf-8'))
-    print(f"weather data sent: {message.strip()}")
+    print(f"Weather sent: {message.strip()}")
 
 def send_time(ser, time_str, date_str):
-    """send time data (T,time,date)"""
+    """Send time data (T,time,date)"""
     message = f"T,{time_str},{date_str}\n"
     ser.write(message.encode('utf-8'))
-    print(f"time data sent: {message.strip()}")
+    print(f"Time sent: {message.strip()}")
 
 def main():
     # Serial port connection
@@ -80,7 +89,7 @@ def main():
         print("  Windows: Check COM ports in Device Manager")
         sys.exit(1)
     
-    print(f"Weather updates every {UPDATE_INTERVAL} seconds, time updates every 1 second...")
+    print(f"Weather is updated every {UPDATE_INTERVAL} seconds, and time is updated every 1 second...")
     print("exit: Ctrl+C\n")
     
     last_weather_update = 0
@@ -111,7 +120,7 @@ def main():
             time.sleep(1)  # update time every 1 second
     
     except KeyboardInterrupt:
-        print("\nProgram terminated")
+        print("\nProgram exited")
         ser.close()
 
 if __name__ == '__main__':
