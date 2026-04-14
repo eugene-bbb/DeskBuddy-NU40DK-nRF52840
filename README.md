@@ -265,5 +265,3 @@ const int ANIM_SPEED = 150;  // Slower animation (default: 100)
 - Weather API: [wttr.in](https://wttr.in) (free, no API key needed / 무료, API 키 불필요)
 - Libraries / 라이브러리: Adafruit GFX, Adafruit SSD1306
 
-hey ! what'sup !!
-office asml
