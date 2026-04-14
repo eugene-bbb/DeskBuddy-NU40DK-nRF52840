@@ -6,6 +6,9 @@ Build your own DeskBuddy using the **NU40-DK** (nRF52840-based board by NUCODE) 
 
 **NU40-DK**(NUCODE의 nRF52840 기반 보드)와 OLED 디스플레이로 나만의 DeskBuddy를 만들어보세요.
 
+You can check the video!
+> 링크 추가 예정
+
 ![Project Status](https://img.shields.io/badge/status-working-brightgreen)
 ![Platform](https://img.shields.io/badge/platform-nRF52840-blue)
 
