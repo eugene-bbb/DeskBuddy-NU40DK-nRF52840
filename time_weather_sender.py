@@ -11,7 +11,7 @@ import sys
 from datetime import datetime
 
 # settings
-SERIAL_PORT = '/dev/cu.usbmodem1101'  # fix as needed (e.g. /dev/ttyACM0 on Linux, COM3 on Windows, /dev/cu.usbmodem* on macOS)
+SERIAL_PORT = '/dev/cu.usbmodem141101'  # fix as needed (e.g. /dev/ttyACM0 on Linux, COM3 on Windows, /dev/cu.usbmodem* on macOS)
 BAUD_RATE = 115200
 UPDATE_INTERVAL = 60
 
